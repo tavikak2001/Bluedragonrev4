@@ -1,0 +1,80 @@
+
+{
+  "entities": {
+    "Employee": {
+      "title": "พนักงาน",
+      "description": "ข้อมูลรายละเอียดของพนักงาน",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string", "description": "รหัสพนักงาน" },
+        "firstName": { "type": "string", "description": "ชื่อ" },
+        "lastName": { "type": "string", "description": "นามสกุล" },
+        "nickname": { "type": "string", "description": "ชื่อเล่น" },
+        "phone": { "type": "string", "description": "เบอร์โทรศัพท์" },
+        "position": { "type": "string", "description": "ตำแหน่ง" },
+        "department": { "type": "string", "description": "แผนก" },
+        "dailyWage": { "type": "number", "description": "ค่าแรงต่อวัน" },
+        "otRatePerHour": { "type": "number", "description": "ค่า OT ต่อชั่วโมง" },
+        "status": { "type": "string", "enum": ["Active", "On Leave", "Inactive"], "description": "สถานะ" },
+        "profileImageUrl": { "type": "string", "description": "URL รูปภาพพนักงาน" }
+      },
+      "required": ["employeeId", "firstName", "lastName", "position", "dailyWage"]
+    },
+    "Project": {
+      "title": "โครงการ",
+      "description": "ข้อมูลโครงการหรือสถานที่ทำงาน",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string", "description": "รหัสโครงการ" },
+        "projectName": { "type": "string", "description": "ชื่อโครงการ" },
+        "clientName": { "type": "string", "description": "ชื่อลูกค้า" },
+        "location": { "type": "string", "description": "สถานที่ทำงาน" },
+        "startDate": { "type": "string", "format": "date", "description": "วันที่เริ่ม" },
+        "endDate": { "type": "string", "format": "date", "description": "วันที่สิ้นสุด" },
+        "status": { "type": "string", "enum": ["Planning", "In Progress", "Completed", "On Hold"], "description": "สถานะ" }
+      },
+      "required": ["projectId", "projectName", "clientName", "status"]
+    },
+    "Timesheet": {
+      "title": "การลงเวลาทำงาน",
+      "description": "บันทึกการเข้าออกงานของพนักงาน",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date", "description": "วันที่ทำงาน" },
+        "employeeId": { "type": "string", "description": "รหัสพนักงาน" },
+        "projectId": { "type": "string", "description": "รหัสโครงการ" },
+        "checkIn": { "type": "string", "description": "เวลาเข้างาน" },
+        "checkOut": { "type": "string", "description": "เวลาออกงาน" },
+        "breakMinutes": { "type": "number", "description": "เวลาพัก (นาที)" },
+        "workingHours": { "type": "number", "description": "ชั่วโมงทำงานปกติ" },
+        "otHours": { "type": "number", "description": "ชั่วโมง OT" },
+        "isLate": { "type": "boolean", "description": "มาสาย" },
+        "isEarlyLeave": { "type": "boolean", "description": "กลับก่อนเวลา" },
+        "remarks": { "type": "string", "description": "หมายเหตุ" }
+      },
+      "required": ["date", "employeeId", "projectId", "checkIn", "checkOut"]
+    },
+    "Setting": {
+      "title": "ตั้งค่าระบบ",
+      "description": "การตั้งค่าพื้นฐานของบริษัทและกฎการทำงาน",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "companyLogo": { "type": "string" },
+        "standardStartTime": { "type": "string", "default": "08:00" },
+        "standardEndTime": { "type": "string", "default": "17:00" },
+        "lunchBreakStart": { "type": "string", "default": "12:00" },
+        "lunchBreakEnd": { "type": "string", "default": "13:00" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/employees/{employeeId}": { "schema": "Employee", "description": "รายชื่อพนักงาน" },
+    "/projects/{projectId}": { "schema": "Project", "description": "รายชื่อโครงการ" },
+    "/timesheets/{timesheetId}": { "schema": "Timesheet", "description": "บันทึกเวลาทำงาน" },
+    "/settings/global": { "schema": "Setting", "description": "ตั้งค่าระบบส่วนกลาง" }
+  }
+}
