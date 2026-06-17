@@ -1,16 +1,16 @@
-
 'use client';
 
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, ShieldCheck, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -85,7 +85,7 @@ export default function LoginPage() {
                 />
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full bg-accent h-12 text-lg shadow-lg" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                   <>
@@ -94,6 +94,15 @@ export default function LoginPage() {
                   </>
                 )}
               </Button>
+              <div className="text-center w-full">
+                <p className="text-sm text-muted-foreground mb-2">ยังไม่มีบัญชีผู้ใช้?</p>
+                <Link href="/register" className="w-full">
+                  <Button variant="outline" className="w-full border-accent text-accent hover:bg-accent/5">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    สมัครสมาชิกใหม่
+                  </Button>
+                </Link>
+              </div>
             </CardFooter>
           </form>
         </Card>
