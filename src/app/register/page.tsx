@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, ArrowLeft, Loader2 } from 'lucide-react';
+import { UserPlus, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function RegisterPage() {
   const auth = useAuth();
@@ -21,6 +23,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -30,22 +33,15 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     
     if (!auth) {
-      toast({
-        variant: "destructive",
-        title: "ระบบไม่พร้อมใช้งาน",
-        description: "ไม่สามารถเชื่อมต่อกับบริการยืนยันตัวตนได้ โปรดตรวจสอบการตั้งค่า Firebase",
-      });
+      setErrorMsg("ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ โปรดตรวจสอบ Firebase Configuration");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "สมัครไม่สำเร็จ",
-        description: "รหัสผ่านไม่ตรงกัน โปรดตรวจสอบอีกครั้ง",
-      });
+      setErrorMsg("รหัสผ่านไม่ตรงกัน โปรดตรวจสอบอีกครั้ง");
       return;
     }
     
@@ -54,27 +50,30 @@ export default function RegisterPage() {
       await createUserWithEmailAndPassword(auth, email, password);
       toast({
         title: "สมัครสมาชิกสำเร็จ",
-        description: "ยินดีต้อนรับสู่ครอบครัว Blue Dragon",
+        description: "ยินดีต้อนรับสู่ระบบ Blue Dragon",
       });
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);
-      let errorMessage = "เกิดข้อผิดพลาดในการสมัครสมาชิก";
+      let message = "เกิดข้อผิดพลาดในการสมัครสมาชิก";
       
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "อีเมลนี้ถูกใช้งานแล้ว";
+        message = "อีเมลนี้ถูกใช้งานแล้วในระบบ";
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
+        message = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = "ระบบยังไม่เปิดให้สมัครด้วยอีเมลและรหัสผ่าน (โปรดเปิดใช้งานใน Firebase Console)";
+        message = "ระบบยังไม่เปิดให้สมัครด้วยอีเมล (โปรดเปิดใช้งาน Email/Password ใน Firebase Console -> Authentication)";
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "รูปแบบอีเมลไม่ถูกต้อง";
+        message = "รูปแบบอีเมลไม่ถูกต้อง";
+      } else {
+        message = `ข้อผิดพลาด: ${error.message}`;
       }
       
+      setErrorMsg(message);
       toast({
         variant: "destructive",
         title: "สมัครไม่สำเร็จ",
-        description: errorMessage,
+        description: message,
       });
     } finally {
       setLoading(false);
@@ -93,28 +92,36 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sarabun">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-3 mx-auto mb-4">
+          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-3 mx-auto mb-4 text-2xl">
             BD
           </div>
           <h1 className="text-3xl font-bold text-primary">Blue Dragon</h1>
           <p className="text-muted-foreground">ลงทะเบียนเข้าใช้งานระบบ</p>
         </div>
 
-        <Card className="border-none shadow-2xl">
-          <CardHeader className="space-y-1">
+        <Card className="border-none shadow-2xl overflow-hidden">
+          <CardHeader className="space-y-1 bg-white border-b">
             <CardTitle className="text-2xl text-center">สมัครสมาชิก</CardTitle>
             <CardDescription className="text-center">
-              สร้างบัญชีใหม่เพื่อจัดการข้อมูลบริษัทของคุณ
+              สร้างบัญชีใหม่เพื่อจัดการข้อมูลพนักงาน
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleRegister}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
+              {errorMsg && (
+                <Alert variant="destructive" className="bg-destructive/10">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>พบข้อผิดพลาด</AlertTitle>
+                  <AlertDescription>{errorMsg}</AlertDescription>
+                </Alert>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="email">อีเมล</Label>
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="example@bluedragon.com" 
+                  placeholder="name@company.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
@@ -144,7 +151,7 @@ export default function RegisterPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full bg-accent h-12 text-lg shadow-lg" disabled={loading}>
+              <Button type="submit" className="w-full bg-accent h-12 text-lg shadow-lg hover:bg-accent/90" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -157,8 +164,8 @@ export default function RegisterPage() {
                   </>
                 )}
               </Button>
-              <Link href="/login" className="w-full">
-                <Button variant="ghost" className="w-full text-muted-foreground hover:text-primary">
+              <Link href="/login" className="w-full text-center">
+                <Button variant="ghost" className="text-muted-foreground hover:text-primary">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   กลับไปหน้าเข้าสู่ระบบ
                 </Button>

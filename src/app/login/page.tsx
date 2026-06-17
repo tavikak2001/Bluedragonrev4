@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -30,6 +32,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     if (!auth) return;
     
     setLoading(true);
@@ -42,38 +45,63 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
+      let message = "อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง";
+      
+      if (error.code === 'auth/user-not-found') {
+        message = "ไม่พบบัญชีผู้ใช้นี้ในระบบ";
+      } else if (error.code === 'auth/wrong-password') {
+        message = "รหัสผ่านไม่ถูกต้อง";
+      } else if (error.code === 'auth/invalid-credential') {
+        message = "ข้อมูลประจำตัวไม่ถูกต้อง โปรดตรวจสอบอีเมลและรหัสผ่าน";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        message = "การเข้าสู่ระบบด้วยอีเมลยังไม่ถูกเปิดใช้งานใน Firebase Console";
+      }
+      
+      setErrorMsg(message);
       toast({
         variant: "destructive",
         title: "เข้าสู่ระบบไม่สำเร็จ",
-        description: "อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง",
+        description: message,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (authLoading) return null;
+  if (authLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <Loader2 className="w-10 h-10 animate-spin text-accent" />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sarabun">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sarabun text-primary">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-3 mx-auto mb-4">
+          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-3 mx-auto mb-4 text-2xl">
             BD
           </div>
-          <h1 className="text-3xl font-bold text-primary">Blue Dragon</h1>
-          <p className="text-muted-foreground">ระบบบริหารจัดการพนักงาน</p>
+          <h1 className="text-3xl font-bold">Blue Dragon</h1>
+          <p className="text-muted-foreground font-medium">ระบบบริหารจัดการพนักงาน</p>
         </div>
 
-        <Card className="border-none shadow-2xl">
-          <CardHeader className="space-y-1">
+        <Card className="border-none shadow-2xl overflow-hidden">
+          <CardHeader className="space-y-1 bg-white border-b">
             <CardTitle className="text-2xl text-center">เข้าสู่ระบบ</CardTitle>
             <CardDescription className="text-center">
               กรอกข้อมูลเพื่อเข้าใช้งานระบบ
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
+              {errorMsg && (
+                <Alert variant="destructive" className="bg-destructive/10">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>ไม่สามารถเข้าสู่ระบบได้</AlertTitle>
+                  <AlertDescription>{errorMsg}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">อีเมล</Label>
                 <Input 
@@ -98,13 +126,20 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full bg-accent h-12 text-lg shadow-lg" disabled={loading}>
+              <Button type="submit" className="w-full bg-accent h-12 text-lg shadow-lg hover:bg-accent/90" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <LogIn className="w-5 h-5 mr-2" />}
                 เข้าสู่ระบบ
               </Button>
-              <div className="text-center w-full">
-                <p className="text-sm text-muted-foreground mb-3">ยังไม่มีบัญชีผู้ใช้?</p>
-                <Link href="/register" className="w-full">
+              <div className="text-center w-full space-y-3">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-slate-200"></span>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-muted-foreground">หรือ</span>
+                  </div>
+                </div>
+                <Link href="/register" className="block w-full">
                   <Button variant="outline" className="w-full border-accent text-accent hover:bg-accent/5">
                     <UserPlus className="w-4 h-4 mr-2" />
                     สมัครสมาชิกใหม่
