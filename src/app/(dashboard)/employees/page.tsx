@@ -38,6 +38,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Select,
@@ -163,7 +164,7 @@ export default function EmployeesPage() {
                       <AvatarFallback>{emp.nickname.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-bold text-primary">{emp.name}</ ({emp.nickname})</p>
+                      <p className="text-sm font-bold text-primary">{emp.name} ({emp.nickname})</p>
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <Phone className="w-3 h-3 text-accent" /> {emp.phone}
                       </p>
