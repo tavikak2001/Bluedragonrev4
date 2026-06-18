@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Calendar as CalendarIcon, 
   Clock,
@@ -56,11 +56,15 @@ export default function TimesheetsPage() {
     isEarlyLeave: false
   });
 
-  // Get Employees & Projects for Dropdowns
   const employeesRef = useMemoFirebase(() => db ? collection(db, "employees") : null, [db]);
   const projectsRef = useMemoFirebase(() => db ? collection(db, "projects") : null, [db]);
   const { data: employees } = useCollection(employeesRef);
   const { data: projects } = useCollection(projectsRef);
+
+  // กรองเฉพาะพนักงานที่ยังไม่พ้นสภาพ
+  const activeEmployees = useMemo(() => {
+    return employees?.filter(emp => emp.status !== 'Inactive') || [];
+  }, [employees]);
 
   useEffect(() => {
     if (formData.entryType === "Work") {
@@ -104,7 +108,7 @@ export default function TimesheetsPage() {
 
     toast({
       title: "บันทึกสำเร็จ",
-      description: `ระบบกำลังดำเนินการบันทึกสถานะ ${formData.entryType === 'Work' ? 'มาทำงาน' : 'ลางาน'} วันที่ ${formData.date}`,
+      description: `ระบบกำลังดำเนินการบันทึกสถานะเรียบร้อยแล้ว`,
     });
     
     setLoading(false);
@@ -119,7 +123,7 @@ export default function TimesheetsPage() {
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto font-sarabun">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-primary tracking-tight">ลงเวลาทำงาน / บันทึกการลา</h1>
-        <p className="text-muted-foreground">บันทึกการเข้างานปกติ หรือเลือกสถานะลางานเพื่อสรุปรายงานประจำวัน</p>
+        <p className="text-muted-foreground">บันทึกการทำงานของพนักงานที่ยังปฏิบัติงานอยู่</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -161,7 +165,7 @@ export default function TimesheetsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="font-bold">พนักงาน</Label>
+                  <Label className="font-bold">พนักงาน (เฉพาะที่ยังทำงานอยู่)</Label>
                   <Select 
                     value={formData.employeeId}
                     onValueChange={(v) => setFormData({...formData, employeeId: v})}
@@ -170,7 +174,7 @@ export default function TimesheetsPage() {
                       <SelectValue placeholder="เลือกพนักงาน" />
                     </SelectTrigger>
                     <SelectContent>
-                      {employees?.map(emp => (
+                      {activeEmployees?.map(emp => (
                         <SelectItem key={emp.id} value={emp.id}>{emp.firstName} {emp.lastName} ({emp.nickname})</SelectItem>
                       ))}
                     </SelectContent>
@@ -265,12 +269,6 @@ export default function TimesheetsPage() {
                     <span className="text-accent text-sm font-bold">เวลาล่วงเวลา (OT)</span>
                     <span className="text-2xl font-bold text-accent">{calc.otHours.toFixed(1)} ชม.</span>
                   </div>
-                  <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
-                    <span className="text-xs font-medium text-slate-500">สถานะมาสาย</span>
-                    <Badge variant={calc.isLate ? "destructive" : "secondary"}>
-                      {calc.isLate ? "มาสาย" : "ปกติ"}
-                    </Badge>
-                  </div>
                 </>
               ) : (
                 <div className="text-center py-8 space-y-3">
@@ -280,7 +278,6 @@ export default function TimesheetsPage() {
                   <p className="text-sm font-bold text-primary">
                     บันทึกสถานะ: {formData.entryType === 'Sick Leave' ? 'ลาป่วย' : 'ลากิจ'}
                   </p>
-                  <p className="text-xs text-muted-foreground">ระบบจะไม่นำชั่วโมงในวันลานี้ไปคำนวณค่าแรงอัตโนมัติ</p>
                 </div>
               )}
             </CardContent>

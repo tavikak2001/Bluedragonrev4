@@ -11,6 +11,7 @@ import {
   Loader2,
   CalendarDays,
   ShieldCheck,
+  UserMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,7 +140,6 @@ export default function EmployeesPage() {
       updatedAt: serverTimestamp()
     };
 
-    // เขียนข้อมูลแบบ Non-blocking (Optimistic) เพื่อความเร็ว
     setDoc(docRef, payload, { merge: true })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -150,8 +150,8 @@ export default function EmployeesPage() {
       });
 
     toast({ 
-      title: editingEmployee ? "อัปเดตพนักงานแล้ว" : "เพิ่มพนักงานใหม่แล้ว", 
-      description: `ข้อมูลคุณ ${formData.firstName} ได้รับการบันทึกเข้าสู่ระบบแล้ว` 
+      title: editingEmployee ? "อัปเดตข้อมูลแล้ว" : "เพิ่มพนักงานใหม่แล้ว", 
+      description: `ข้อมูลพนักงานได้รับการบันทึกเรียบร้อยแล้ว` 
     });
     
     setIsSaving(false);
@@ -159,8 +159,26 @@ export default function EmployeesPage() {
     resetForm();
   };
 
+  const handleResign = (employee: any) => {
+    if (!db || !confirm(`ยืนยันการบันทึก "พ้นสภาพ" ของพนักงาน: ${employee.firstName} ${employee.lastName}?`)) return;
+    
+    const docRef = doc(db, "employees", employee.id);
+    const payload = { status: "Inactive", updatedAt: serverTimestamp() };
+    
+    setDoc(docRef, payload, { merge: true })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: payload
+        }));
+      });
+    
+    toast({ title: "บันทึกการลาออกสำเร็จ", description: "พนักงานพ้นสภาพจากการปฏิบัติงานแล้ว" });
+  };
+
   const handleDelete = (employee: any) => {
-    if (!db || !confirm(`ยืนยันการลบพนักงาน: ${employee.firstName} ${employee.lastName}?`)) return;
+    if (!db || !confirm(`ยืนยันการลบข้อมูลพนักงานถาวร: ${employee.firstName} ${employee.lastName}?`)) return;
     
     const docRef = doc(db, "employees", employee.id);
     deleteDoc(docRef)
@@ -171,10 +189,9 @@ export default function EmployeesPage() {
         }));
       });
     
-    toast({ title: "ลบสำเร็จ", description: "ลบข้อมูลพนักงานออกจากระบบแล้ว" });
+    toast({ title: "ลบสำเร็จ", description: "ลบข้อมูลออกจากระบบแล้ว" });
   };
 
-  // คำนวณวันครบ 119 วัน
   const get119Day = (dateStr: string) => {
     if (!dateStr) return null;
     const date = parseISO(dateStr);
@@ -187,7 +204,7 @@ export default function EmployeesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary tracking-tight">ข้อมูลพนักงาน</h1>
-          <p className="text-muted-foreground">จัดการข้อมูลพนักงาน ตรวจสอบสถานะ และวันครบประเมิน 119 วัน (รองรับ 1,000+ รายชื่อ)</p>
+          <p className="text-muted-foreground">จัดการข้อมูลพนักงาน ตรวจสอบสถานะ และบันทึกการลาออก</p>
         </div>
         <Button 
           onClick={handleOpenAddDialog}
@@ -227,7 +244,7 @@ export default function EmployeesPage() {
                 >
                   <option value="Active">ทำงานปกติ (Active)</option>
                   <option value="On Leave">ลางาน (On Leave)</option>
-                  <option value="Inactive">พ้นสภาพ (Inactive)</option>
+                  <option value="Inactive">พ้นสภาพ/ลาออก (Inactive)</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -272,7 +289,7 @@ export default function EmployeesPage() {
                 <Input type="number" value={formData.otRatePerHour} onChange={e => setFormData({...formData, otRatePerHour: Number(e.target.value)})} placeholder="0.00" />
               </div>
               
-              {formData.startDate && (
+              {formData.startDate && formData.status === "Active" && (
                 <div className="md:col-span-3 p-4 bg-accent/5 rounded-xl border border-accent/10 flex items-center justify-between">
                   <div className="flex items-center gap-3 text-accent">
                     <ShieldCheck className="w-5 h-5" />
@@ -307,7 +324,7 @@ export default function EmployeesPage() {
             />
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            จำนวนพนักงาน: <span className="text-primary font-bold">{filteredEmployees.length}</span> รายชื่อ
+            พนักงาน Active: <span className="text-green-600 font-bold">{employees?.filter(e => e.status === 'Active').length || 0}</span> / ทั้งหมด {employees?.length || 0} รายชื่อ
           </div>
         </div>
 
@@ -323,8 +340,7 @@ export default function EmployeesPage() {
                 <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
                   <TableHead className="w-[100px] font-bold text-primary text-xs">รหัสพนักงาน</TableHead>
                   <TableHead className="font-bold text-primary">ชื่อ-นามสกุล</TableHead>
-                  <TableHead className="font-bold text-primary">ตำแหน่ง / แผนก</TableHead>
-                  <TableHead className="font-bold text-primary">วันที่เริ่มงาน</TableHead>
+                  <TableHead className="font-bold text-primary">ตำแหน่ง</TableHead>
                   <TableHead className="font-bold text-primary">ครบ 119 วัน</TableHead>
                   <TableHead className="font-bold text-primary">สถานะ</TableHead>
                   <TableHead className="text-right font-bold text-primary">จัดการ</TableHead>
@@ -333,18 +349,19 @@ export default function EmployeesPage() {
               <TableBody>
                 {filteredEmployees.map((emp) => {
                   const day119 = get119Day(emp.startDate);
+                  const isInactive = emp.status === 'Inactive';
                   return (
-                    <TableRow key={emp.id} className="group hover:bg-slate-50/80 border-b border-slate-50">
+                    <TableRow key={emp.id} className={`group hover:bg-slate-50/80 border-b border-slate-50 ${isInactive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                       <TableCell className="font-mono text-[10px] font-bold text-slate-400">{emp.employeeId}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="w-9 h-9 border-2 border-white shadow-sm shrink-0">
-                            <AvatarFallback className="bg-primary text-white text-xs font-bold">
+                            <AvatarFallback className={`${isInactive ? 'bg-slate-300' : 'bg-primary'} text-white text-xs font-bold`}>
                               {emp.firstName?.charAt(0)}{emp.nickname?.charAt(0) || emp.lastName?.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-bold text-primary">{emp.firstName} {emp.lastName}</p>
+                            <p className={`text-sm font-bold ${isInactive ? 'text-slate-500 line-through' : 'text-primary'}`}>{emp.firstName} {emp.lastName}</p>
                             <p className="text-[10px] text-muted-foreground">ชื่อเล่น: {emp.nickname || "-"}</p>
                           </div>
                         </div>
@@ -353,11 +370,8 @@ export default function EmployeesPage() {
                         <p className="text-xs font-bold text-slate-700">{emp.position}</p>
                         <p className="text-[10px] text-muted-foreground">{emp.department || "-"}</p>
                       </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        {emp.startDate ? format(parseISO(emp.startDate), "dd/MM/yyyy") : "-"}
-                      </TableCell>
                       <TableCell>
-                        {day119 ? (
+                        {!isInactive && day119 ? (
                           <div className="flex items-center gap-1.5 text-xs font-bold text-accent">
                             <CalendarDays className="w-3.5 h-3.5" />
                             {format(day119, "dd/MM/yyyy")}
@@ -372,10 +386,10 @@ export default function EmployeesPage() {
                               ? 'bg-green-50 text-green-700 border-none' 
                               : emp.status === 'On Leave'
                               ? 'bg-amber-50 text-amber-700 border-none'
-                              : 'bg-slate-100 text-slate-400 border-none'
+                              : 'bg-red-50 text-red-700 border-none'
                           }
                         >
-                          {emp.status === 'Active' ? 'ทำงานปกติ' : emp.status === 'On Leave' ? 'ลางาน' : 'พ้นสภาพ'}
+                          {emp.status === 'Active' ? 'ทำงานปกติ' : emp.status === 'On Leave' ? 'ลางาน' : 'พ้นสภาพ/ลาออก'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -389,9 +403,14 @@ export default function EmployeesPage() {
                             <DropdownMenuItem className="gap-2 cursor-pointer py-2" onClick={() => handleOpenEditDialog(emp)}>
                               <Edit2 className="w-4 h-4 text-blue-500" /> แก้ไขข้อมูล
                             </DropdownMenuItem>
+                            {!isInactive && (
+                              <DropdownMenuItem className="gap-2 cursor-pointer py-2 text-red-600 font-bold" onClick={() => handleResign(emp)}>
+                                <UserMinus className="w-4 h-4" /> บันทึกพ้นสภาพ
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="gap-2 text-destructive cursor-pointer py-2" onClick={() => handleDelete(emp)}>
-                              <Trash2 className="w-4 h-4" /> ลบออก
+                              <Trash2 className="w-4 h-4" /> ลบถาวร
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
