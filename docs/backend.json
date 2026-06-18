@@ -15,10 +15,11 @@
         "department": { "type": "string", "description": "แผนก" },
         "dailyWage": { "type": "number", "description": "ค่าแรงต่อวัน" },
         "otRatePerHour": { "type": "number", "description": "ค่า OT ต่อชั่วโมง" },
+        "startDate": { "type": "string", "format": "date", "description": "วันที่เริ่มทำงาน" },
         "status": { "type": "string", "enum": ["Active", "On Leave", "Inactive"], "description": "สถานะ" },
         "profileImageUrl": { "type": "string", "description": "URL รูปภาพพนักงาน" }
       },
-      "required": ["employeeId", "firstName", "lastName", "position", "dailyWage"]
+      "required": ["employeeId", "firstName", "lastName", "position", "dailyWage", "startDate"]
     },
     "UserProfile": {
       "title": "โปรไฟล์ผู้ใช้งาน",
