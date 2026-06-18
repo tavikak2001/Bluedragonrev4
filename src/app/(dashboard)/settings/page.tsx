@@ -1,8 +1,8 @@
+
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Settings, 
   Building2, 
   Clock, 
   Wallet, 
@@ -10,7 +10,8 @@ import {
   Image as ImageIcon,
   Bell,
   ShieldCheck,
-  CalendarDays
+  CalendarDays,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,16 +27,67 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function SettingsPage() {
+  const db = useFirestore();
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const settingsRef = useMemoFirebase(() => db ? doc(db, "settings", "global") : null, [db]);
+  const { data: settings, loading } = useDoc(settingsRef);
 
-  const handleSave = () => {
-    toast({
-      title: "บันทึกการตั้งค่าสำเร็จ",
-      description: "ข้อมูลระบบของคุณได้รับการอัปเดตเรียบร้อยแล้ว",
-    });
+  const [formData, setFormData] = useState({
+    companyName: "",
+    companyNameEn: "",
+    taxId: "",
+    phone: "",
+    address: "",
+    standardStartTime: "08:00",
+    standardEndTime: "17:00",
+    lunchBreakMinutes: "60"
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        companyName: settings.companyName || "",
+        companyNameEn: settings.companyNameEn || "",
+        taxId: settings.taxId || "",
+        phone: settings.phone || "",
+        address: settings.address || "",
+        standardStartTime: settings.standardStartTime || "08:00",
+        standardEndTime: settings.standardEndTime || "17:00",
+        lunchBreakMinutes: settings.lunchBreakMinutes?.toString() || "60"
+      });
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    if (!db) return;
+    setIsSaving(true);
+    
+    const docRef = doc(db, "settings", "global");
+    setDoc(docRef, formData, { merge: true })
+      .then(() => {
+        toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลระบบของคุณได้รับการอัปเดตแล้ว" });
+        setIsSaving(false);
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'write', requestResourceData: formData }));
+        setIsSaving(false);
+      });
   };
+
+  if (loading) return (
+    <div className="p-20 flex flex-col items-center justify-center gap-4">
+      <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      <p className="text-muted-foreground">กำลังโหลดข้อมูลการตั้งค่า...</p>
+    </div>
+  );
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -46,17 +98,11 @@ export default function SettingsPage() {
 
       <Tabs defaultValue="company" className="space-y-6">
         <TabsList className="bg-white border p-1 rounded-xl h-auto flex-wrap">
-          <TabsTrigger value="company" className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-lg px-6 py-2.5 gap-2">
+          <TabsTrigger value="company" className="rounded-lg px-6 py-2.5 gap-2">
             <Building2 className="w-4 h-4" /> ข้อมูลบริษัท
           </TabsTrigger>
-          <TabsTrigger value="workflow" className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-lg px-6 py-2.5 gap-2">
+          <TabsTrigger value="workflow" className="rounded-lg px-6 py-2.5 gap-2">
             <Clock className="w-4 h-4" /> กฎการทำงาน
-          </TabsTrigger>
-          <TabsTrigger value="finance" className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-lg px-6 py-2.5 gap-2">
-            <Wallet className="w-4 h-4" /> อัตราค่าแรง
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-lg px-6 py-2.5 gap-2">
-            <Bell className="w-4 h-4" /> การแจ้งเตือน
           </TabsTrigger>
         </TabsList>
 
@@ -67,41 +113,33 @@ export default function SettingsPage() {
               <CardDescription>ข้อมูลนี้จะแสดงในรายงานและใบเรียกเก็บเงินของลูกค้า</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-8 items-start">
-                <div className="space-y-4 shrink-0">
-                  <Label>โลโก้บริษัท</Label>
-                  <div className="w-32 h-32 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer hover:bg-slate-200 transition-colors">
-                    <ImageIcon className="w-8 h-8" />
-                    <span className="text-[10px] font-medium">อัปโหลดรูป</span>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <Label>ชื่อบริษัท (ภาษาไทย)</Label>
+                  <Input value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="companyName">ชื่อบริษัท (ภาษาไทย)</Label>
-                    <Input id="companyName" defaultValue="บริษัท บลูดราก้อน คอนสตรัคชั่น จำกัด" />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="companyNameEn">ชื่อบริษัท (English)</Label>
-                    <Input id="companyNameEn" defaultValue="Blue Dragon Construction Co., Ltd." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taxId">เลขประจำตัวผู้เสียภาษี</Label>
-                    <Input id="taxId" defaultValue="0105560000000" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">เบอร์โทรศัพท์สำนักงาน</Label>
-                    <Input id="phone" defaultValue="02-123-4567" />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="address">ที่อยู่สำนักงานใหญ่</Label>
-                    <Input id="address" defaultValue="99/9 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110" />
-                  </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>ชื่อบริษัท (English)</Label>
+                  <Input value={formData.companyNameEn} onChange={e => setFormData({...formData, companyNameEn: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>เลขประจำตัวผู้เสียภาษี</Label>
+                  <Input value={formData.taxId} onChange={e => setFormData({...formData, taxId: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>เบอร์โทรศัพท์สำนักงาน</Label>
+                  <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>ที่อยู่สำนักงานใหญ่</Label>
+                  <Input value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
                 </div>
               </div>
               <Separator />
               <div className="flex justify-end">
-                <Button className="bg-accent gap-2" onClick={handleSave}>
-                  <Save className="w-4 h-4" /> บันทึกการเปลี่ยนแปลง
+                <Button className="bg-accent gap-2" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  บันทึกการเปลี่ยนแปลง
                 </Button>
               </div>
             </CardContent>
@@ -112,102 +150,30 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-xl">
             <CardHeader>
               <CardTitle className="text-lg">ตั้งค่าเวลาและกฎการทำงาน</CardTitle>
-              <CardDescription>กำหนดเวลามาตรฐานเพื่อใช้คำนวณการมาสายและการเลิกงาน</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-green-600" /> เวลาเข้างานมาตรฐาน
-                  </Label>
-                  <Input type="time" defaultValue="08:00" />
+                  <Label className="flex items-center gap-2">เวลาเข้างานมาตรฐาน</Label>
+                  <Input type="time" value={formData.standardStartTime} onChange={e => setFormData({...formData, standardStartTime: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-red-600" /> เวลาเลิกงานมาตรฐาน
-                  </Label>
-                  <Input type="time" defaultValue="17:00" />
+                  <Label className="flex items-center gap-2">เวลาเลิกงานมาตรฐาน</Label>
+                  <Input type="time" value={formData.standardEndTime} onChange={e => setFormData({...formData, standardEndTime: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <CalendarDays className="w-4 h-4 text-blue-600" /> เวลาพัก (นาที)
-                  </Label>
-                  <Input type="number" defaultValue="60" />
+                  <Label className="flex items-center gap-2">เวลาพัก (นาที)</Label>
+                  <Input type="number" value={formData.lunchBreakMinutes} onChange={e => setFormData({...formData, lunchBreakMinutes: e.target.value})} />
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-primary">การตั้งค่าขั้นสูง</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-bold">อนุญาตให้พนักงานลงเวลาเอง</p>
-                      <p className="text-[10px] text-muted-foreground">พนักงานสามารถเช็คอินผ่านมือถือด้วยตัวเองเมื่ออยู่ในพิกัดโครงการ</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-bold">ระบบอนุมัติ OT อัตโนมัติ</p>
-                      <p className="text-[10px] text-muted-foreground">อนุมัติชั่วโมงล่วงเวลาทันทีหากมีการลงเวลาออกหลัง 17:00 น.</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </div>
-              
               <div className="flex justify-end pt-4">
-                <Button className="bg-accent gap-2" onClick={handleSave}>
-                  <Save className="w-4 h-4" /> บันทึกกฎการทำงาน
+                <Button className="bg-accent gap-2" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  บันทึกกฎการทำงาน
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="finance">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <Card className="border-none shadow-sm rounded-xl">
-               <CardHeader>
-                 <CardTitle className="text-lg">อัตราค่าแรงมาตรฐาน</CardTitle>
-                 <CardDescription>ค่าเริ่มต้นสำหรับพนักงานใหม่</CardDescription>
-               </CardHeader>
-               <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                   <Label>ค่าแรงขั้นต่ำต่อวัน (บาท)</Label>
-                   <Input type="number" defaultValue="450" />
-                 </div>
-                 <div className="space-y-2">
-                   <Label>ตัวคูณค่า OT (เท่าของค่าแรงปกติ)</Label>
-                   <Input type="number" step="0.1" defaultValue="1.5" />
-                 </div>
-                 <Button className="w-full bg-primary mt-4" onClick={handleSave}>อัปเดตอัตราพื้นฐาน</Button>
-               </CardContent>
-             </Card>
-
-             <Card className="border-none shadow-sm rounded-xl">
-               <CardHeader>
-                 <CardTitle className="text-lg">ความปลอดภัย</CardTitle>
-                 <CardDescription>จัดการสิทธิ์และการเข้าถึงข้อมูล</CardDescription>
-               </CardHeader>
-               <CardContent className="space-y-4">
-                 <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-                    <ShieldCheck className="w-8 h-8 text-green-500" />
-                    <div>
-                      <p className="text-sm font-bold">เปลี่ยนรหัสผ่าน</p>
-                      <p className="text-[10px] text-muted-foreground">เปลี่ยนรหัสผ่านสำหรับบัญชีผู้ดูแลระบบ</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-                    <Settings className="w-8 h-8 text-blue-500" />
-                    <div>
-                      <p className="text-sm font-bold">ประวัติการเข้าใช้งาน</p>
-                      <p className="text-[10px] text-muted-foreground">ตรวจสอบประวัติการล็อกอินและการแก้ไขข้อมูล</p>
-                    </div>
-                 </div>
-               </CardContent>
-             </Card>
-           </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -5,7 +5,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { useAuth } from "@/firebase";
+import { useAuth, useUser } from "@/firebase";
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +17,7 @@ import {
   Menu,
   Bell,
   Search,
-  ChevronLeft,
+  User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
@@ -130,14 +131,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <div className="relative w-64 max-w-sm hidden md:block">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="ค้นหาข้อมูลในระบบ..."
-                className="pl-8 bg-muted/50 border-none focus-visible:ring-accent"
-              />
-            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -150,22 +143,32 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-1 hover:bg-secondary flex items-center gap-3 h-auto">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold text-primary">ผู้ดูแลระบบ</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Blue Dragon</p>
+                    <p className="text-sm font-bold text-primary truncate max-w-[120px]">{user?.email?.split('@')[0] || 'ผู้ดูแลระบบ'}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">แอดมิน</p>
                   </div>
                   <Avatar className="w-9 h-9 border-2 border-accent">
-                    <AvatarImage src="https://picsum.photos/seed/admin/40/40" />
+                    <AvatarImage src={`https://picsum.photos/seed/${user?.uid || 'admin'}/40/40`} />
                     <AvatarFallback className="bg-primary text-white">AD</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>บัญชีของฉัน</DropdownMenuLabel>
+                <DropdownMenuLabel>บัญชีผู้ใช้งาน</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>โปรไฟล์</DropdownMenuItem>
-                <DropdownMenuItem>ตั้งค่าบริษัท</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <UserIcon className="w-4 h-4" /> ข้อมูลส่วนตัว
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="w-4 h-4" /> ตั้งค่าบริษัท
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive font-bold" onClick={handleLogout}>ออกจากระบบ</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive font-bold flex items-center gap-2" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" /> ออกจากระบบ
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
