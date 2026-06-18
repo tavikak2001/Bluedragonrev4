@@ -1,5 +1,5 @@
 
-import { differenceInMinutes, parse, format } from 'date-fns';
+import { differenceInMinutes, parse, isValid } from 'date-fns';
 
 export interface TimesheetCalculation {
   workingHours: number;
@@ -8,9 +8,13 @@ export interface TimesheetCalculation {
   isEarlyLeave: boolean;
 }
 
+/**
+ * Calculates working hours, overtime, and punctuality.
+ * Optimized for standard 8-hour workday with OT.
+ */
 export function calculateHours(
-  checkIn: string, // HH:mm
-  checkOut: string, // HH:mm
+  checkIn: string,
+  checkOut: string,
   breakMinutes: number = 60,
   rules = {
     standardStart: '08:00',
@@ -27,30 +31,27 @@ export function calculateHours(
   const standardStart = parse(rules.standardStart, 'HH:mm', new Date());
   const standardEnd = parse(rules.standardEnd, 'HH:mm', new Date());
 
+  if (!isValid(start) || !isValid(end)) {
+    return { workingHours: 0, otHours: 0, isLate: false, isEarlyLeave: false };
+  }
+
   const totalMinutes = differenceInMinutes(end, start);
-  const effectiveWorkMinutes = totalMinutes - breakMinutes;
+  const effectiveWorkMinutes = Math.max(0, totalMinutes - breakMinutes);
+  const totalHoursWorked = effectiveWorkMinutes / 60;
   
-  // Normal hours are capped at 8 usually, but let's follow the requirement:
-  // "OT after 8 hours" and "OT starts after 17:00"
-  
-  const workingHours = Math.max(0, effectiveWorkMinutes / 60);
-  
-  // OT logic: Hours worked after 17:00
+  // OT Calculation: Any time after standardEnd
   let otHours = 0;
   if (end > standardEnd) {
     otHours = differenceInMinutes(end, standardEnd) / 60;
   }
 
-  // Late arrival
-  const isLate = start > standardStart;
-
-  // Early leave
-  const isEarlyLeave = end < standardEnd;
+  // Cap normal working hours at 8
+  const workingHours = Math.min(totalHoursWorked - otHours, rules.maxNormalHours);
 
   return {
-    workingHours: Math.min(workingHours, rules.maxNormalHours),
-    otHours: otHours,
-    isLate,
-    isEarlyLeave
+    workingHours: Number(workingHours.toFixed(1)),
+    otHours: Number(otHours.toFixed(1)),
+    isLate: start > standardStart,
+    isEarlyLeave: end < standardEnd
   };
 }
