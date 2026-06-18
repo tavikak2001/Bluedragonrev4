@@ -7,7 +7,7 @@ import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -39,22 +39,20 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({
-        title: "เข้าสู่ระบบสำเร็จ",
-        description: "ยินดีต้อนรับเข้าสู่ระบบ Blue Dragon",
+        title: "ยินดีต้อนรับ",
+        description: "เข้าสู่ระบบ Blue Dragon สำเร็จ",
       });
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
-      let message = "อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง";
+      let message = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
       
       if (error.code === 'auth/user-not-found') {
         message = "ไม่พบบัญชีผู้ใช้นี้ในระบบ";
       } else if (error.code === 'auth/wrong-password') {
         message = "รหัสผ่านไม่ถูกต้อง";
       } else if (error.code === 'auth/invalid-credential') {
-        message = "ข้อมูลประจำตัวไม่ถูกต้อง โปรดตรวจสอบอีเมลและรหัสผ่าน";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        message = "การเข้าสู่ระบบด้วยอีเมลยังไม่ถูกเปิดใช้งานใน Firebase Console";
+        message = "ข้อมูลไม่ถูกต้อง โปรดตรวจสอบอีเมลและรหัสผ่าน";
       }
       
       setErrorMsg(message);
@@ -81,15 +79,15 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-3 mx-auto mb-4 text-2xl">
             BD
           </div>
-          <h1 className="text-3xl font-bold">Blue Dragon</h1>
-          <p className="text-muted-foreground font-medium">ระบบบริหารจัดการพนักงาน</p>
+          <h1 className="text-4xl font-extrabold tracking-tighter">Blue Dragon</h1>
+          <p className="text-muted-foreground font-medium">ระบบบริหารจัดการพนักงานมืออาชีพ</p>
         </div>
 
         <Card className="border-none shadow-2xl overflow-hidden">
           <CardHeader className="space-y-1 bg-white border-b">
-            <CardTitle className="text-2xl text-center">เข้าสู่ระบบ</CardTitle>
+            <CardTitle className="text-2xl text-center font-bold">เข้าสู่ระบบ</CardTitle>
             <CardDescription className="text-center">
-              กรอกข้อมูลเพื่อเข้าใช้งานระบบ
+              ระบุบัญชีผู้ใช้งานเพื่อเข้าถึงข้อมูลบริษัท
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
@@ -97,13 +95,13 @@ export default function LoginPage() {
               {errorMsg && (
                 <Alert variant="destructive" className="bg-destructive/10">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>ไม่สามารถเข้าสู่ระบบได้</AlertTitle>
+                  <AlertTitle>เข้าสู่ระบบผิดพลาด</AlertTitle>
                   <AlertDescription>{errorMsg}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">อีเมล</Label>
+                <Label htmlFor="email">อีเมลผู้ใช้งาน</Label>
                 <Input 
                   id="email" 
                   type="email" 
@@ -128,7 +126,7 @@ export default function LoginPage() {
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full bg-accent h-12 text-lg shadow-lg hover:bg-accent/90" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <LogIn className="w-5 h-5 mr-2" />}
-                เข้าสู่ระบบ
+                ล็อกอินเข้าใช้งาน
               </Button>
               <div className="text-center w-full space-y-3">
                 <div className="relative">
@@ -151,7 +149,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          &copy; 2024 Blue Dragon Construction Co., Ltd.
+          &copy; 2024 Blue Dragon Construction Co., Ltd. สงวนลิขสิทธิ์
         </p>
       </div>
     </div>
