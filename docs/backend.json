@@ -57,6 +57,7 @@
         "projectId": { "type": "string", "description": "รหัสโครงการ" },
         "checkIn": { "type": "string", "description": "เวลาเข้างาน" },
         "checkOut": { "type": "string", "description": "เวลาออกงาน" },
+        "entryType": { "type": "string", "enum": ["Work", "Sick Leave", "Business Leave", "Absent"], "default": "Work" },
         "breakMinutes": { "type": "number", "description": "เวลาพัก (นาที)" },
         "workingHours": { "type": "number", "description": "ชั่วโมงทำงานปกติ" },
         "otHours": { "type": "number", "description": "ชั่วโมง OT" },
@@ -64,7 +65,7 @@
         "isEarlyLeave": { "type": "boolean", "description": "กลับก่อนเวลา" },
         "remarks": { "type": "string", "description": "หมายเหตุ" }
       },
-      "required": ["date", "employeeId", "projectId", "checkIn", "checkOut"]
+      "required": ["date", "employeeId", "projectId"]
     },
     "Setting": {
       "title": "ตั้งค่าระบบ",

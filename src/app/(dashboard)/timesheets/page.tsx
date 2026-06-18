@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from "react";
@@ -6,6 +7,7 @@ import {
   Clock,
   Save,
   Loader2,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,7 @@ export default function TimesheetsPage() {
     date: new Date().toISOString().split('T')[0],
     employeeId: "",
     projectId: "",
+    entryType: "Work",
     checkIn: "08:00",
     checkOut: "17:00",
     breakMinutes: 60,
@@ -60,9 +63,13 @@ export default function TimesheetsPage() {
   const { data: projects } = useCollection(projectsRef);
 
   useEffect(() => {
-    const result = calculateHours(formData.checkIn, formData.checkOut, formData.breakMinutes);
-    setCalc(result);
-  }, [formData.checkIn, formData.checkOut, formData.breakMinutes]);
+    if (formData.entryType === "Work") {
+      const result = calculateHours(formData.checkIn, formData.checkOut, formData.breakMinutes);
+      setCalc(result);
+    } else {
+      setCalc({ workingHours: 0, otHours: 0, isLate: false, isEarlyLeave: false });
+    }
+  }, [formData.checkIn, formData.checkOut, formData.breakMinutes, formData.entryType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +92,6 @@ export default function TimesheetsPage() {
       createdAt: serverTimestamp()
     };
 
-    // ส่งคำสั่งบันทึกทันทีและจัดการ UI โดยไม่รอผลตอบกลับจาก Server
     addDoc(timesheetsRef, payload)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -98,11 +104,10 @@ export default function TimesheetsPage() {
 
     toast({
       title: "บันทึกสำเร็จ",
-      description: `ระบบกำลังดำเนินการบันทึกเวลาทำงานวันที่ ${formData.date}`,
+      description: `ระบบกำลังดำเนินการบันทึกสถานะ ${formData.entryType === 'Work' ? 'มาทำงาน' : 'ลางาน'} วันที่ ${formData.date}`,
     });
     
     setLoading(false);
-    // ล้างฟอร์มบางส่วนเพื่อให้กรอกคนต่อไปได้เร็วขึ้น
     setFormData(prev => ({
       ...prev,
       employeeId: "",
@@ -111,17 +116,17 @@ export default function TimesheetsPage() {
   };
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto">
+    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto font-sarabun">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary tracking-tight">ลงเวลาทำงาน</h1>
-        <p className="text-muted-foreground">บันทึกเวลาเข้า-ออกงานประจำวัน และคำนวณโอเวอร์ไทม์ (OT) อัตโนมัติ</p>
+        <h1 className="text-3xl font-bold text-primary tracking-tight">ลงเวลาทำงาน / บันทึกการลา</h1>
+        <p className="text-muted-foreground">บันทึกการเข้างานปกติ หรือเลือกสถานะลางานเพื่อสรุปรายงานประจำวัน</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 shadow-md border-none rounded-xl overflow-hidden">
           <CardHeader className="bg-primary text-white">
             <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5" /> แบบฟอร์มบันทึกเวลา
+              <CalendarIcon className="w-5 h-5" /> รายละเอียดการลงเวลา
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -136,6 +141,25 @@ export default function TimesheetsPage() {
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label className="font-bold">ประเภทการลงเวลา</Label>
+                  <Select 
+                    value={formData.entryType}
+                    onValueChange={(v) => setFormData({...formData, entryType: v})}
+                  >
+                    <SelectTrigger className="bg-slate-50 border-slate-200">
+                      <SelectValue placeholder="เลือกประเภท" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Work">มาทำงานปกติ (Work)</SelectItem>
+                      <SelectItem value="Sick Leave">ลาป่วย (Sick Leave)</SelectItem>
+                      <SelectItem value="Business Leave">ลากิจ (Business Leave)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="font-bold">พนักงาน</Label>
                   <Select 
@@ -152,62 +176,64 @@ export default function TimesheetsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label className="font-bold">โครงการ / สถานที่</Label>
+                  <Select 
+                    value={formData.projectId}
+                    onValueChange={(v) => setFormData({...formData, projectId: v})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือกโครงการ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects?.map(prj => (
+                        <SelectItem key={prj.id} value={prj.id}>{prj.projectName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {formData.entryType === "Work" && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="space-y-2">
+                    <Label htmlFor="checkIn" className="font-bold text-green-700">เวลาเข้างาน</Label>
+                    <Input 
+                      id="checkIn" 
+                      type="time" 
+                      value={formData.checkIn}
+                      onChange={(e) => setFormData({...formData, checkIn: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="checkOut" className="font-bold text-red-700">เวลาออกงาน</Label>
+                    <Input 
+                      id="checkOut" 
+                      type="time" 
+                      value={formData.checkOut}
+                      onChange={(e) => setFormData({...formData, checkOut: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="break" className="font-bold">เวลาพัก (นาที)</Label>
+                    <Input 
+                      id="break" 
+                      type="number" 
+                      value={formData.breakMinutes}
+                      onChange={(e) => setFormData({...formData, breakMinutes: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
-                <Label className="font-bold">โครงการ</Label>
-                <Select 
-                  value={formData.projectId}
-                  onValueChange={(v) => setFormData({...formData, projectId: v})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="เลือกโครงการ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects?.map(prj => (
-                      <SelectItem key={prj.id} value={prj.id}>{prj.projectName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="checkIn" className="font-bold text-green-700">เวลาเข้างาน</Label>
-                  <Input 
-                    id="checkIn" 
-                    type="time" 
-                    value={formData.checkIn}
-                    onChange={(e) => setFormData({...formData, checkIn: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="checkOut" className="font-bold text-red-700">เวลาออกงาน</Label>
-                  <Input 
-                    id="checkOut" 
-                    type="time" 
-                    value={formData.checkOut}
-                    onChange={(e) => setFormData({...formData, checkOut: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="break" className="font-bold">เวลาพัก (นาที)</Label>
-                  <Input 
-                    id="break" 
-                    type="number" 
-                    value={formData.breakMinutes}
-                    onChange={(e) => setFormData({...formData, breakMinutes: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="remarks" className="font-bold">หมายเหตุ</Label>
+                <Label htmlFor="remarks" className="font-bold">หมายเหตุ / เหตุผลการลา</Label>
                 <Textarea 
                   id="remarks" 
-                  placeholder="รายละเอียดงานที่ทำ หรือข้อมูลเพิ่มเติม" 
+                  placeholder={formData.entryType === 'Work' ? "รายละเอียดงาน..." : "ระบุสาเหตุการลา..."}
                   value={formData.remarks}
                   onChange={(e) => setFormData({...formData, remarks: e.target.value})}
+                  className="min-h-[100px]"
                 />
               </div>
 
@@ -226,26 +252,37 @@ export default function TimesheetsPage() {
         <div className="space-y-6">
           <Card className="bg-white border-none shadow-md border-t-4 border-accent">
             <CardHeader>
-              <CardTitle className="text-lg text-primary">สรุปผลการคำนวณ</CardTitle>
+              <CardTitle className="text-lg text-primary">สรุปรายการ</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-0">
-              <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
-                <span className="text-muted-foreground text-sm font-medium">ชั่วโมงทำงานปกติ</span>
-                <span className="text-2xl font-bold text-primary">{calc.workingHours} ชม.</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-accent/10 rounded-lg">
-                <span className="text-accent text-sm font-bold">เวลาล่วงเวลา (OT)</span>
-                <span className="text-2xl font-bold text-accent">{calc.otHours.toFixed(1)} ชม.</span>
-              </div>
-              
-              <div className="pt-4 border-t border-slate-100 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-slate-500">สถานะมาสาย</span>
-                  <Badge variant={calc.isLate ? "destructive" : "secondary"}>
-                    {calc.isLate ? "มาสาย" : "ปกติ"}
-                  </Badge>
+              {formData.entryType === "Work" ? (
+                <>
+                  <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+                    <span className="text-muted-foreground text-sm font-medium">ชั่วโมงทำงานปกติ</span>
+                    <span className="text-2xl font-bold text-primary">{calc.workingHours} ชม.</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-accent/10 rounded-lg">
+                    <span className="text-accent text-sm font-bold">เวลาล่วงเวลา (OT)</span>
+                    <span className="text-2xl font-bold text-accent">{calc.otHours.toFixed(1)} ชม.</span>
+                  </div>
+                  <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                    <span className="text-xs font-medium text-slate-500">สถานะมาสาย</span>
+                    <Badge variant={calc.isLate ? "destructive" : "secondary"}>
+                      {calc.isLate ? "มาสาย" : "ปกติ"}
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 space-y-3">
+                  <div className="p-3 bg-amber-50 rounded-full w-12 h-12 flex items-center justify-center mx-auto text-amber-600">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-bold text-primary">
+                    บันทึกสถานะ: {formData.entryType === 'Sick Leave' ? 'ลาป่วย' : 'ลากิจ'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">ระบบจะไม่นำชั่วโมงในวันลานี้ไปคำนวณค่าแรงอัตโนมัติ</p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

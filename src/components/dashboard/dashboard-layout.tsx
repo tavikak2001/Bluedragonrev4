@@ -19,6 +19,7 @@ import {
   Menu,
   Bell,
   User as UserIcon,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,7 +40,8 @@ const navItems = [
   { name: "พนักงาน", href: "/employees", icon: Users },
   { name: "โครงการ", href: "/projects", icon: Briefcase },
   { name: "ลงเวลาทำงาน", href: "/timesheets", icon: Clock },
-  { name: "รายงาน", href: "/reports", icon: FileBarChart },
+  { name: "สรุปรายวัน", href: "/attendance-report", icon: ClipboardCheck },
+  { name: "รายงาน/AI", href: "/reports", icon: FileBarChart },
   { name: "ตั้งค่า", href: "/settings", icon: Settings },
 ];
 
