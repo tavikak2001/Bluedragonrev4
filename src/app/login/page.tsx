@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -14,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { LogIn, UserPlus, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -25,8 +23,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const logoData = PlaceHolderImages.find(img => img.id === 'company-logo');
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -57,8 +53,6 @@ export default function LoginPage() {
         message = "ไม่พบบัญชีผู้ใช้นี้";
       } else if (error.code === 'auth/wrong-password') {
         message = "รหัสผ่านไม่ถูกต้อง";
-      } else if (error.code === 'auth/api-key-not-valid') {
-        message = "API Key ของ Firebase ไม่ถูกต้อง โปรดตรวจสอบการตั้งค่า";
       }
       
       setErrorMsg(message);
@@ -77,20 +71,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sarabun">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-xl mx-auto mb-6 overflow-hidden border-4 border-accent">
-            {logoData && (
-              <Image 
-                src={logoData.imageUrl} 
-                alt="Logo" 
-                width={96} 
-                height={96} 
-                className="object-cover"
-                data-ai-hint={logoData.imageHint}
-              />
-            )}
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tighter text-primary">BLUE DRAGON</h1>
-          <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">Perfect Team Co., Ltd.</p>
+          <h1 className="text-4xl font-extrabold tracking-tighter text-primary">BLUE DRAGON</h1>
+          <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs mt-2">Perfect Team Co., Ltd.</p>
         </div>
 
         <Card className="border-none shadow-2xl overflow-hidden rounded-2xl">

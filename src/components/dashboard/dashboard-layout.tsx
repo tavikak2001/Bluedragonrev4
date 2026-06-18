@@ -3,7 +3,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { doc } from "firebase/firestore";
@@ -22,7 +21,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +32,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const navItems = [
   { name: "แดชบอร์ด", href: "/dashboard", icon: LayoutDashboard },
@@ -53,8 +51,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-
-  const logoData = PlaceHolderImages.find(img => img.id === 'company-logo');
 
   const userProfileRef = useMemoFirebase(() => (db && user) ? doc(db, "users", user.uid) : null, [db, user]);
   const { data: profile } = useDoc(userProfileRef);
@@ -81,25 +77,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >
-        <div className="p-4 flex items-center gap-3">
-          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-lg overflow-hidden border-2 border-accent">
-            {logoData && (
-              <Image 
-                src={logoData.imageUrl} 
-                alt="Logo" 
-                width={48} 
-                height={48} 
-                className="object-cover"
-                data-ai-hint={logoData.imageHint}
-              />
+        <div className="p-6 flex items-center gap-3">
+          <div className="flex flex-col leading-tight overflow-hidden text-white">
+            <span className="font-bold text-lg tracking-tighter whitespace-nowrap">BLUE DRAGON</span>
+            {isSidebarOpen && (
+              <span className="text-[10px] opacity-70 uppercase tracking-widest">PERFECT TEAM</span>
             )}
           </div>
-          {isSidebarOpen && (
-            <div className="flex flex-col leading-tight overflow-hidden text-white">
-              <span className="font-bold text-sm tracking-tight whitespace-nowrap">BLUE DRAGON</span>
-              <span className="text-[10px] opacity-70 uppercase tracking-widest">PERFECT TEAM</span>
-            </div>
-          )}
         </div>
 
         <nav className="flex-1 px-3 space-y-1 mt-4">
@@ -167,7 +151,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <p className="text-[10px] text-muted-foreground uppercase">{profile?.position || 'แอดมิน'}</p>
                   </div>
                   <Avatar className="w-9 h-9 border-2 border-accent">
-                    <AvatarImage src={`https://picsum.photos/seed/${user?.uid || 'user'}/40/40`} />
                     <AvatarFallback className="bg-primary text-white">
                       {profile?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                     </AvatarFallback>

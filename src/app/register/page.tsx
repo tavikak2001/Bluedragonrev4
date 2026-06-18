@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -14,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function RegisterPage() {
   const auth = useAuth();
@@ -26,8 +24,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const logoData = PlaceHolderImages.find(img => img.id === 'company-logo');
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -70,10 +66,6 @@ export default function RegisterPage() {
         message = "อีเมลนี้มีอยู่ในระบบแล้ว";
       } else if (error.code === 'auth/invalid-email') {
         message = "รูปแบบอีเมลไม่ถูกต้อง";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        message = "ระบบยังไม่เปิดให้สมัครด้วยอีเมล (โปรดเปิดใช้งาน Email/Password ใน Firebase Console)";
-      } else if (error.code === 'auth/api-key-not-valid') {
-        message = "API Key ของ Firebase ไม่ถูกต้อง โปรดตรวจสอบการตั้งค่า";
       }
       
       setErrorMsg(message);
@@ -92,20 +84,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sarabun">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-lg mx-auto mb-4 overflow-hidden border-2 border-accent">
-            {logoData && (
-              <Image 
-                src={logoData.imageUrl} 
-                alt="Logo" 
-                width={80} 
-                height={80} 
-                className="object-cover"
-                data-ai-hint={logoData.imageHint}
-              />
-            )}
-          </div>
-          <h1 className="text-2xl font-bold text-primary">BLUE DRAGON</h1>
-          <p className="text-muted-foreground text-xs uppercase tracking-widest">สร้างบัญชีผู้ใช้งานใหม่</p>
+          <h1 className="text-3xl font-bold text-primary tracking-tighter">BLUE DRAGON</h1>
+          <p className="text-muted-foreground text-xs uppercase tracking-widest mt-1">สร้างบัญชีผู้ใช้งานใหม่</p>
         </div>
 
         <Card className="border-none shadow-2xl rounded-2xl overflow-hidden">
