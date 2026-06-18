@@ -20,6 +20,17 @@
       },
       "required": ["employeeId", "firstName", "lastName", "position", "dailyWage"]
     },
+    "UserProfile": {
+      "title": "โปรไฟล์ผู้ใช้งาน",
+      "description": "ข้อมูลส่วนตัวของผู้ดูแลระบบหรือผู้ใช้งาน",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "ชื่อ-นามสกุลแสดงผล" },
+        "position": { "type": "string", "description": "ตำแหน่งงาน" },
+        "startDate": { "type": "string", "format": "date", "description": "วันที่เริ่มทำงาน" },
+        "email": { "type": "string", "description": "อีเมล" }
+      }
+    },
     "Project": {
       "title": "โครงการ",
       "description": "ข้อมูลโครงการหรือสถานที่ทำงาน",
@@ -73,6 +84,7 @@
   },
   "firestore": {
     "/employees/{employeeId}": { "schema": "Employee", "description": "รายชื่อพนักงาน" },
+    "/users/{userId}": { "schema": "UserProfile", "description": "โปรไฟล์ผู้ใช้งานระบบ" },
     "/projects/{projectId}": { "schema": "Project", "description": "รายชื่อโครงการ" },
     "/timesheets/{timesheetId}": { "schema": "Timesheet", "description": "บันทึกเวลาทำงาน" },
     "/settings/global": { "schema": "Setting", "description": "ตั้งค่าระบบส่วนกลาง" }

@@ -5,7 +5,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import {
   LayoutDashboard,
   Users,
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,9 +46,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
+  const db = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
+  // Fetch User Profile for display name
+  const userProfileRef = useMemoFirebase(() => (db && user) ? doc(db, "users", user.uid) : null, [db, user]);
+  const { data: profile } = useDoc(userProfileRef);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -143,8 +148,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-1 hover:bg-secondary flex items-center gap-3 h-auto">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold text-primary truncate max-w-[120px]">{user?.email?.split('@')[0] || 'ผู้ดูแลระบบ'}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">แอดมิน</p>
+                    <p className="text-sm font-bold text-primary truncate max-w-[120px]">
+                      {profile?.displayName || user?.email?.split('@')[0] || 'ผู้ดูแลระบบ'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground uppercase">{profile?.position || 'แอดมิน'}</p>
                   </div>
                   <Avatar className="w-9 h-9 border-2 border-accent">
                     <AvatarImage src={`https://picsum.photos/seed/${user?.uid || 'admin'}/40/40`} />
@@ -156,17 +163,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuLabel>บัญชีผู้ใช้งาน</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer w-full">
                     <UserIcon className="w-4 h-4" /> ข้อมูลส่วนตัว
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer w-full">
                     <Settings className="w-4 h-4" /> ตั้งค่าบริษัท
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive font-bold flex items-center gap-2" onClick={handleLogout}>
+                <DropdownMenuItem className="text-destructive font-bold flex items-center gap-2 cursor-pointer" onClick={handleLogout}>
                   <LogOut className="w-4 h-4" /> ออกจากระบบ
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -184,3 +191,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+// Helper to use doc from firebase within component
+import { doc } from "firebase/firestore";
