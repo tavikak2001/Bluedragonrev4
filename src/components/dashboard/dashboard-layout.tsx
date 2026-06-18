@@ -1,7 +1,9 @@
+
 'use client';
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { doc } from "firebase/firestore";
@@ -16,7 +18,6 @@ import {
   LogOut,
   Menu,
   Bell,
-  Search,
   User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const navItems = [
   { name: "แดชบอร์ด", href: "/dashboard", icon: LayoutDashboard },
@@ -50,7 +52,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
-  // Fetch User Profile for display name
+  const logoData = PlaceHolderImages.find(img => img.id === 'company-logo');
+
   const userProfileRef = useMemoFirebase(() => (db && user) ? doc(db, "users", user.uid) : null, [db, user]);
   const { data: profile } = useDoc(userProfileRef);
 
@@ -70,21 +73,29 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sarabun">
-      {/* Sidebar */}
       <aside
         className={cn(
           "bg-primary text-primary-foreground transition-all duration-300 ease-in-out flex flex-col z-30 shadow-xl",
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center font-bold text-white shrink-0 shadow-lg rotate-3">
-            BD
+        <div className="p-4 flex items-center gap-3">
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-lg overflow-hidden border-2 border-accent">
+            {logoData && (
+              <Image 
+                src={logoData.imageUrl} 
+                alt="Logo" 
+                width={48} 
+                height={48} 
+                className="object-cover"
+                data-ai-hint={logoData.imageHint}
+              />
+            )}
           </div>
           {isSidebarOpen && (
             <div className="flex flex-col leading-tight overflow-hidden">
-              <span className="font-bold text-lg tracking-tight whitespace-nowrap">Blue Dragon</span>
-              <span className="text-[10px] opacity-70 uppercase tracking-widest">Management</span>
+              <span className="font-bold text-sm tracking-tight whitespace-nowrap">BLUE DRAGON</span>
+              <span className="text-[10px] opacity-70 uppercase tracking-widest">PERFECT TEAM</span>
             </div>
           )}
         </div>
@@ -122,9 +133,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
         <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0 z-20">
           <div className="flex items-center gap-4">
             <Button
@@ -135,6 +144,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             >
               <Menu className="w-5 h-5" />
             </Button>
+            <h2 className="text-lg font-bold text-primary hidden md:block">
+              {navItems.find(item => item.href === pathname)?.name || "Blue Dragon"}
+            </h2>
           </div>
 
           <div className="flex items-center gap-4">
@@ -180,7 +192,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page Area */}
         <main className="flex-1 overflow-y-auto p-6 bg-slate-50">
           <div className="max-w-7xl mx-auto space-y-6">
             {children}

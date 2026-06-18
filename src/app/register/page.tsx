@@ -1,6 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -12,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function RegisterPage() {
   const auth = useAuth();
@@ -23,6 +26,8 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const logoData = PlaceHolderImages.find(img => img.id === 'company-logo');
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -53,8 +58,8 @@ export default function RegisterPage() {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       toast({
-        title: "สำเร็จ",
-        description: "ลงทะเบียนสมาชิกใหม่เรียบร้อยแล้ว",
+        title: "ลงทะเบียนสำเร็จ",
+        description: "ยินดีต้อนรับสู่ระบบ Blue Dragon",
       });
       router.push('/dashboard');
     } catch (error: any) {
@@ -85,22 +90,33 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sarabun">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-3 mx-auto mb-4 text-2xl">BD</div>
-          <h1 className="text-3xl font-bold text-primary">Blue Dragon</h1>
-          <p className="text-muted-foreground">สร้างบัญชีผู้ใช้งานใหม่</p>
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-lg mx-auto mb-4 overflow-hidden border-2 border-accent">
+            {logoData && (
+              <Image 
+                src={logoData.imageUrl} 
+                alt="Logo" 
+                width={80} 
+                height={80} 
+                className="object-cover"
+                data-ai-hint={logoData.imageHint}
+              />
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-primary">BLUE DRAGON</h1>
+          <p className="text-muted-foreground text-xs uppercase tracking-widest">สร้างบัญชีผู้ใช้งานใหม่</p>
         </div>
 
-        <Card className="border-none shadow-2xl">
-          <CardHeader className="bg-white border-b">
+        <Card className="border-none shadow-2xl rounded-2xl overflow-hidden">
+          <CardHeader className="bg-primary text-white py-6">
             <CardTitle className="text-xl text-center">ลงทะเบียน</CardTitle>
-            <CardDescription className="text-center">กรอกข้อมูลเพื่อเริ่มต้นใช้งานระบบ</CardDescription>
+            <CardDescription className="text-slate-300 text-center text-xs">กรอกข้อมูลเพื่อเริ่มต้นใช้งานระบบบริหารจัดการ</CardDescription>
           </CardHeader>
           <form onSubmit={handleRegister}>
             <CardContent className="space-y-4 pt-6">
               {errorMsg && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="bg-destructive/5">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>พบข้อผิดพลาด</AlertTitle>
                   <AlertDescription>{errorMsg}</AlertDescription>
@@ -108,25 +124,25 @@ export default function RegisterPage() {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="email">อีเมล</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Label htmlFor="email">อีเมลหน่วยงาน</Label>
+                <Input id="email" type="email" placeholder="example@bluedragon.com" className="bg-slate-50" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">รหัสผ่าน</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Label htmlFor="password">กำหนดรหัสผ่าน</Label>
+                <Input id="password" type="password" className="bg-slate-50" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">ยืนยันรหัสผ่านอีกครั้ง</Label>
-                <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                <Input id="confirmPassword" type="password" className="bg-slate-50" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full bg-accent h-12 shadow-lg" disabled={loading}>
+            <CardFooter className="flex flex-col gap-4 pb-8">
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 h-12 shadow-lg font-bold" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <UserPlus className="w-5 h-5 mr-2" />}
                 ยืนยันลงทะเบียน
               </Button>
               <Link href="/login" className="w-full text-center">
-                <Button variant="ghost" className="text-muted-foreground">
+                <Button variant="ghost" className="text-muted-foreground hover:bg-slate-50">
                   <ArrowLeft className="w-4 h-4 mr-2" /> ย้อนกลับไปหน้าล็อกอิน
                 </Button>
               </Link>

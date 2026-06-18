@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "company-logo",
-      "description": "SUEA Organizer Logo",
-      "imageUrl": "https://picsum.photos/seed/suea1/200/200",
-      "imageHint": "professional logo"
+      "description": "Blue Dragon Perfect Team Logo",
+      "imageUrl": "https://picsum.photos/seed/bluedragon/200/200",
+      "imageHint": "blue dragon"
     },
     {
       "id": "employee-avatar",
