@@ -8,7 +8,8 @@ import {
   Save, 
   User,
   Loader2,
-  Info
+  Info,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { addDays, format, parseISO, isValid } from 'date-fns';
 import { th } from 'date-fns/locale';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SettingsPage() {
   const db = useFirestore();
@@ -47,7 +49,6 @@ export default function SettingsPage() {
 
   const [companyForm, setCompanyForm] = useState({
     companyName: "",
-    companyNameEn: "",
     taxId: "",
     phone: "",
     address: "",
@@ -62,7 +63,7 @@ export default function SettingsPage() {
     startDate: ""
   });
 
-  // คำนวณวันครบ 119 วัน สำหรับโปรไฟล์ตัวเอง
+  // คำนวณวันครบ 119 วัน
   const probationEndDate = useMemo(() => {
     if (!profileForm.startDate) return null;
     const date = parseISO(profileForm.startDate);
@@ -74,7 +75,6 @@ export default function SettingsPage() {
     if (settings) {
       setCompanyForm({
         companyName: settings.companyName || "",
-        companyNameEn: settings.companyNameEn || "",
         taxId: settings.taxId || "",
         phone: settings.phone || "",
         address: settings.address || "",
@@ -136,8 +136,8 @@ export default function SettingsPage() {
   return (
     <div className="animate-in fade-in duration-500 font-sarabun">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary tracking-tight">ตั้งค่าและโปรไฟล์</h1>
-        <p className="text-muted-foreground">จัดการข้อมูลส่วนตัวของคุณและตั้งค่าบริษัท</p>
+        <h1 className="text-3xl font-bold text-primary tracking-tight">ตั้งค่าสิทธิ์ผู้ใช้งาน</h1>
+        <p className="text-muted-foreground">เฉพาะฝ่ายบริหาร บัญชี และ HR Payroll เท่านั้นที่มีสิทธิ์เข้าถึงระบบนี้</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -157,7 +157,7 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="text-lg">โปรไฟล์ผู้ใช้งาน</CardTitle>
-              <CardDescription>ข้อมูลของคุณที่จะแสดงในระบบ</CardDescription>
+              <CardDescription>ข้อมูลของคุณที่ใช้ระบุตัวตนในฐานะฝ่ายบริหาร/บัญชี</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -170,12 +170,17 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>ตำแหน่ง</Label>
-                  <Input 
-                    placeholder="เช่น ผู้ดูแลระบบ, แอดมิน"
-                    value={profileForm.position} 
-                    onChange={e => setProfileForm({...profileForm, position: e.target.value})} 
-                  />
+                  <Label>ตำแหน่งงาน (ที่ได้รับสิทธิ์)</Label>
+                  <Select value={profileForm.position} onValueChange={val => setProfileForm({...profileForm, position: val})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือกตำแหน่ง" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ฝ่ายบริหาร">ฝ่ายบริหาร (Management)</SelectItem>
+                      <SelectItem value="บัญชี">บัญชี (Accounting)</SelectItem>
+                      <SelectItem value="HR Payroll">HR Payroll</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>วันที่เริ่มทำงาน</Label>
@@ -188,13 +193,13 @@ export default function SettingsPage() {
                 
                 {probationEndDate && (
                   <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 flex items-start gap-3">
-                    <Info className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <ShieldAlert className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-bold text-accent uppercase tracking-wider">วันที่ทำงานครบ 119 วันของคุณ</p>
+                      <p className="text-xs font-bold text-accent uppercase tracking-wider">วันครบประเมิน 119 วันของคุณ</p>
                       <p className="text-lg font-bold text-primary mt-1">
                         {format(probationEndDate, "d MMMM yyyy", { locale: th })}
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">ระบบคำนวณจากวันที่เริ่มทำงานเพื่อแจ้งเตือนวันครบประเมิน</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">ระบบคำนวณจากวันที่เริ่มทำงานเพื่อแจ้งเตือนฝ่ายบริหาร</p>
                     </div>
                   </div>
                 )}
@@ -203,7 +208,7 @@ export default function SettingsPage() {
               <div className="flex justify-end pt-4">
                 <Button className="bg-accent gap-2 min-w-[150px]" onClick={handleSaveProfile} disabled={isSaving}>
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  บันทึกโปรไฟล์
+                  อัปเดตโปรไฟล์
                 </Button>
               </div>
             </CardContent>
@@ -214,7 +219,7 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-xl">
             <CardHeader>
               <CardTitle className="text-lg">ข้อมูลพื้นฐานบริษัท</CardTitle>
-              <CardDescription>ข้อมูลนี้จะแสดงในรายงานและเอกสารต่างๆ</CardDescription>
+              <CardDescription>ใช้สำหรับการออกรายงานเรียกเก็บลูกค้า (Billing)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
