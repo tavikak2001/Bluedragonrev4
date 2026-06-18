@@ -7,9 +7,7 @@ import {
   Clock, 
   Save, 
   User,
-  CalendarDays,
   Loader2,
-  AlertCircle,
   Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,15 +35,13 @@ export default function SettingsPage() {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  
-  // States for tabs
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Company Settings
+  // ดึงข้อมูลบริษัท
   const settingsRef = useMemoFirebase(() => db ? doc(db, "settings", "global") : null, [db]);
   const { data: settings, loading: loadingSettings } = useDoc(settingsRef);
 
-  // User Profile
+  // ดึงข้อมูลโปรไฟล์ผู้ใช้งาน
   const userProfileRef = useMemoFirebase(() => (db && user) ? doc(db, "users", user.uid) : null, [db, user]);
   const { data: profile, loading: loadingProfile } = useDoc(userProfileRef);
 
@@ -66,7 +62,7 @@ export default function SettingsPage() {
     startDate: ""
   });
 
-  // Calculate 119 days
+  // คำนวณวันครบ 119 วัน สำหรับโปรไฟล์ตัวเอง
   const probationEndDate = useMemo(() => {
     if (!profileForm.startDate) return null;
     const date = parseISO(profileForm.startDate);
@@ -121,7 +117,7 @@ export default function SettingsPage() {
     const payload = { ...profileForm, email: user.email };
     setDoc(docRef, payload, { merge: true })
       .then(() => {
-        toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลโปรไฟล์ส่วนตัวได้รับการอัปเดตแล้ว" });
+        toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลโปรไฟล์ของคุณได้รับการอัปเดตแล้ว" });
         setIsSaving(false);
       })
       .catch(async () => {
@@ -133,7 +129,7 @@ export default function SettingsPage() {
   if (loadingSettings || loadingProfile) return (
     <div className="p-20 flex flex-col items-center justify-center gap-4">
       <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      <p className="text-muted-foreground font-sarabun">กำลังโหลดข้อมูล...</p>
+      <p className="text-muted-foreground font-sarabun">กำลังโหลดข้อมูลตั้งค่า...</p>
     </div>
   );
 
@@ -160,15 +156,15 @@ export default function SettingsPage() {
         <TabsContent value="profile">
           <Card className="border-none shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="bg-white border-b">
-              <CardTitle className="text-lg">โปรไฟล์ส่วนตัว</CardTitle>
-              <CardDescription>ข้อมูลของคุณที่แสดงในระบบ</CardDescription>
+              <CardTitle className="text-lg">โปรไฟล์ผู้ใช้งาน</CardTitle>
+              <CardDescription>ข้อมูลของคุณที่จะแสดงในระบบ</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>ชื่อ-นามสกุล</Label>
                   <Input 
-                    placeholder="เช่น สมชาย ใจดี"
+                    placeholder="กรอกชื่อ-นามสกุล"
                     value={profileForm.displayName} 
                     onChange={e => setProfileForm({...profileForm, displayName: e.target.value})} 
                   />
@@ -176,7 +172,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>ตำแหน่ง</Label>
                   <Input 
-                    placeholder="เช่น ผู้บริหาร, แอดมิน"
+                    placeholder="เช่น ผู้ดูแลระบบ, แอดมิน"
                     value={profileForm.position} 
                     onChange={e => setProfileForm({...profileForm, position: e.target.value})} 
                   />
@@ -194,11 +190,11 @@ export default function SettingsPage() {
                   <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 flex items-start gap-3">
                     <Info className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-bold text-accent uppercase tracking-wider">วันที่ทำงานครบ 119 วัน</p>
+                      <p className="text-xs font-bold text-accent uppercase tracking-wider">วันที่ทำงานครบ 119 วันของคุณ</p>
                       <p className="text-lg font-bold text-primary mt-1">
                         {format(probationEndDate, "d MMMM yyyy", { locale: th })}
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">คำนวณอัตโนมัติจากวันที่เริ่มทำงานเพื่อประเมินผลงาน</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">ระบบคำนวณจากวันที่เริ่มทำงานเพื่อแจ้งเตือนวันครบประเมิน</p>
                     </div>
                   </div>
                 )}
@@ -218,12 +214,12 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-xl">
             <CardHeader>
               <CardTitle className="text-lg">ข้อมูลพื้นฐานบริษัท</CardTitle>
-              <CardDescription>ข้อมูลนี้จะแสดงในรายงานและใบเรียกเก็บเงินของลูกค้า</CardDescription>
+              <CardDescription>ข้อมูลนี้จะแสดงในรายงานและเอกสารต่างๆ</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label>ชื่อบริษัท (ภาษาไทย)</Label>
+                  <Label>ชื่อบริษัท</Label>
                   <Input value={companyForm.companyName} onChange={e => setCompanyForm({...companyForm, companyName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
@@ -231,11 +227,11 @@ export default function SettingsPage() {
                   <Input value={companyForm.taxId} onChange={e => setCompanyForm({...companyForm, taxId: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label>เบอร์โทรศัพท์สำนักงาน</Label>
+                  <Label>เบอร์โทรศัพท์</Label>
                   <Input value={companyForm.phone} onChange={e => setCompanyForm({...companyForm, phone: e.target.value})} />
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label>ที่อยู่สำนักงานใหญ่</Label>
+                  <Label>ที่อยู่บริษัท</Label>
                   <Input value={companyForm.address} onChange={e => setCompanyForm({...companyForm, address: e.target.value})} />
                 </div>
               </div>
@@ -243,7 +239,7 @@ export default function SettingsPage() {
               <div className="flex justify-end">
                 <Button className="bg-accent gap-2" onClick={handleSaveCompany} disabled={isSaving}>
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  บันทึกการเปลี่ยนแปลง
+                  บันทึกข้อมูลบริษัท
                 </Button>
               </div>
             </CardContent>
@@ -253,27 +249,27 @@ export default function SettingsPage() {
         <TabsContent value="workflow">
           <Card className="border-none shadow-sm rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg">ตั้งค่าเวลาและกฎการทำงาน</CardTitle>
+              <CardTitle className="text-lg">กฎการทำงานมาตรฐาน</CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">เวลาเข้างานมาตรฐาน</Label>
+                  <Label>เวลาเข้างาน</Label>
                   <Input type="time" value={companyForm.standardStartTime} onChange={e => setCompanyForm({...companyForm, standardStartTime: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">เวลาเลิกงานมาตรฐาน</Label>
+                  <Label>เวลาเลิกงาน</Label>
                   <Input type="time" value={companyForm.standardEndTime} onChange={e => setCompanyForm({...companyForm, standardEndTime: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">เวลาพัก (นาที)</Label>
+                  <Label>เวลาพัก (นาที)</Label>
                   <Input type="number" value={companyForm.lunchBreakMinutes} onChange={e => setCompanyForm({...companyForm, lunchBreakMinutes: e.target.value})} />
                 </div>
               </div>
               <div className="flex justify-end pt-4">
                 <Button className="bg-accent gap-2" onClick={handleSaveCompany} disabled={isSaving}>
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  บันทึกกฎการทำงาน
+                  บันทึกกฎ
                 </Button>
               </div>
             </CardContent>

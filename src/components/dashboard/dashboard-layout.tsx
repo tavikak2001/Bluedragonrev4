@@ -93,7 +93,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
           {isSidebarOpen && (
-            <div className="flex flex-col leading-tight overflow-hidden">
+            <div className="flex flex-col leading-tight overflow-hidden text-white">
               <span className="font-bold text-sm tracking-tight whitespace-nowrap">BLUE DRAGON</span>
               <span className="text-[10px] opacity-70 uppercase tracking-widest">PERFECT TEAM</span>
             </div>
@@ -160,13 +160,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <Button variant="ghost" className="p-1 hover:bg-secondary flex items-center gap-3 h-auto">
                   <div className="text-right hidden sm:block">
                     <p className="text-sm font-bold text-primary truncate max-w-[120px]">
-                      {profile?.displayName || user?.email?.split('@')[0] || 'ผู้ดูแลระบบ'}
+                      {profile?.displayName || user?.email?.split('@')[0] || 'ผู้ใช้งาน'}
                     </p>
                     <p className="text-[10px] text-muted-foreground uppercase">{profile?.position || 'แอดมิน'}</p>
                   </div>
                   <Avatar className="w-9 h-9 border-2 border-accent">
-                    <AvatarImage src={`https://picsum.photos/seed/${user?.uid || 'admin'}/40/40`} />
-                    <AvatarFallback className="bg-primary text-white">AD</AvatarFallback>
+                    <AvatarImage src={`https://picsum.photos/seed/${user?.uid || 'user'}/40/40`} />
+                    <AvatarFallback className="bg-primary text-white">
+                      {profile?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

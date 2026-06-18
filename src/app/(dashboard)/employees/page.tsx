@@ -7,7 +7,6 @@ import {
   MoreVertical, 
   Edit2, 
   Trash2, 
-  Phone, 
   UserPlus,
   Loader2,
   CalendarDays,
@@ -81,7 +80,7 @@ export default function EmployeesPage() {
     if (!employees) return [];
     const term = searchTerm.toLowerCase();
     return employees.filter(emp => 
-      (emp.firstName + " " + emp.lastName).toLowerCase().includes(term) || 
+      (emp.firstName + " " + (emp.lastName || "")).toLowerCase().includes(term) || 
       emp.employeeId?.toLowerCase().includes(term) ||
       emp.nickname?.toLowerCase().includes(term)
     );
@@ -140,7 +139,7 @@ export default function EmployeesPage() {
       updatedAt: serverTimestamp()
     };
 
-    // บันทึกแบบ Non-blocking เพื่อความรวดเร็ว
+    // เขียนข้อมูลแบบ Non-blocking (Optimistic) เพื่อความเร็ว
     setDoc(docRef, payload, { merge: true })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -150,10 +149,9 @@ export default function EmployeesPage() {
         }));
       });
 
-    // ปิดหน้าต่างทันที ไม่ต้องรอ Server
     toast({ 
       title: editingEmployee ? "อัปเดตพนักงานแล้ว" : "เพิ่มพนักงานใหม่แล้ว", 
-      description: `ข้อมูล ${formData.firstName} ได้รับการบันทึกเข้าสู่ระบบ` 
+      description: `ข้อมูลคุณ ${formData.firstName} ได้รับการบันทึกเข้าสู่ระบบแล้ว` 
     });
     
     setIsSaving(false);
@@ -189,7 +187,7 @@ export default function EmployeesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary tracking-tight">ข้อมูลพนักงาน</h1>
-          <p className="text-muted-foreground">จัดการข้อมูลพนักงาน ตรวจสอบสถานะ และวันครบประเมิน 119 วัน</p>
+          <p className="text-muted-foreground">จัดการข้อมูลพนักงาน ตรวจสอบสถานะ และวันครบประเมิน 119 วัน (รองรับ 1,000+ รายชื่อ)</p>
         </div>
         <Button 
           onClick={handleOpenAddDialog}
@@ -309,21 +307,21 @@ export default function EmployeesPage() {
             />
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            จำนวนพนักงานทั้งหมด: <span className="text-primary font-bold">{filteredEmployees.length}</span> / 1,000 คน
+            จำนวนพนักงาน: <span className="text-primary font-bold">{filteredEmployees.length}</span> รายชื่อ
           </div>
         </div>
 
         {loading ? (
           <div className="p-20 flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <p className="text-muted-foreground font-medium">กำลังเตรียมข้อมูลรายชื่อพนักงาน...</p>
+            <p className="text-muted-foreground font-medium">กำลังโหลดข้อมูล...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                  <TableHead className="w-[100px] font-bold text-primary">รหัส</TableHead>
+                  <TableHead className="w-[100px] font-bold text-primary text-xs">รหัสพนักงาน</TableHead>
                   <TableHead className="font-bold text-primary">ชื่อ-นามสกุล</TableHead>
                   <TableHead className="font-bold text-primary">ตำแหน่ง / แผนก</TableHead>
                   <TableHead className="font-bold text-primary">วันที่เริ่มงาน</TableHead>
@@ -337,12 +335,12 @@ export default function EmployeesPage() {
                   const day119 = get119Day(emp.startDate);
                   return (
                     <TableRow key={emp.id} className="group hover:bg-slate-50/80 border-b border-slate-50">
-                      <TableCell className="font-mono text-xs font-bold text-slate-400">{emp.employeeId}</TableCell>
+                      <TableCell className="font-mono text-[10px] font-bold text-slate-400">{emp.employeeId}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="w-9 h-9 border-2 border-white shadow-sm shrink-0">
                             <AvatarFallback className="bg-primary text-white text-xs font-bold">
-                              {emp.firstName?.charAt(0)}{emp.nickname?.charAt(0)}
+                              {emp.firstName?.charAt(0)}{emp.nickname?.charAt(0) || emp.lastName?.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -389,11 +387,11 @@ export default function EmployeesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44 p-1">
                             <DropdownMenuItem className="gap-2 cursor-pointer py-2" onClick={() => handleOpenEditDialog(emp)}>
-                              <Edit2 className="w-4 h-4 text-blue-500" /> แก้ไขข้อมูลพนักงาน
+                              <Edit2 className="w-4 h-4 text-blue-500" /> แก้ไขข้อมูล
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="gap-2 text-destructive cursor-pointer py-2" onClick={() => handleDelete(emp)}>
-                              <Trash2 className="w-4 h-4" /> ลบออกจากระบบ
+                              <Trash2 className="w-4 h-4" /> ลบออก
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
