@@ -10,7 +10,6 @@ import {
   Filter,
   UserPlus,
   Loader2,
-  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +52,6 @@ export default function EmployeesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   
-  // Form State
   const [formData, setFormData] = useState({
     employeeId: "",
     firstName: "",
@@ -121,14 +119,12 @@ export default function EmployeesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSaveEmployee = async (e: React.FormEvent) => {
+  const handleSaveEmployee = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !formData.employeeId) return;
 
     setIsSaving(true);
-    // Use employeeId as the document ID
     const docRef = doc(db, "employees", formData.employeeId);
-    
     const payload = {
       ...formData,
       dailyWage: Number(formData.dailyWage),
@@ -136,16 +132,8 @@ export default function EmployeesPage() {
       updatedAt: serverTimestamp()
     };
 
+    // ไม่ใช้ await เพื่อให้ UI ตอบสนองทันที
     setDoc(docRef, payload, { merge: true })
-      .then(() => {
-        toast({ 
-          title: editingEmployee ? "อัปเดตสำเร็จ" : "บันทึกสำเร็จ", 
-          description: `ข้อมูลพนักงาน ${formData.firstName} ได้รับการบันทึกแล้ว` 
-        });
-        setIsSaving(false);
-        setIsDialogOpen(false);
-        resetForm();
-      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
@@ -153,18 +141,23 @@ export default function EmployeesPage() {
           requestResourceData: payload,
         });
         errorEmitter.emit('permission-error', permissionError);
-        setIsSaving(false);
       });
+
+    // ปิด Dialog และแจ้งเตือนทันที
+    toast({ 
+      title: editingEmployee ? "อัปเดตสำเร็จ" : "บันทึกสำเร็จ", 
+      description: `ข้อมูลพนักงาน ${formData.firstName} ได้รับการส่งข้อมูลแล้ว` 
+    });
+    setIsSaving(false);
+    setIsDialogOpen(false);
+    resetForm();
   };
 
-  const handleDelete = async (employee: any) => {
+  const handleDelete = (employee: any) => {
     if (!db || !confirm(`ยืนยันการลบข้อมูลพนักงาน: ${employee.firstName} ${employee.lastName}?`)) return;
     
     const docRef = doc(db, "employees", employee.id);
     deleteDoc(docRef)
-      .then(() => {
-        toast({ title: "ลบสำเร็จ", description: "ลบข้อมูลพนักงานออกจากระบบแล้ว" });
-      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
@@ -172,6 +165,8 @@ export default function EmployeesPage() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
+    
+    toast({ title: "ลบสำเร็จ", description: "ลบข้อมูลพนักงานออกจากระบบแล้ว" });
   };
 
   return (
@@ -260,7 +255,7 @@ export default function EmployeesPage() {
               <Button className="bg-accent" type="submit" disabled={isSaving}>
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังบันทึก...
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> กำลังดำเนินการ...
                   </>
                 ) : "บันทึกข้อมูลพนักงาน"}
               </Button>
@@ -281,9 +276,6 @@ export default function EmployeesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="sm" className="gap-2 border-slate-200">
-            <Filter className="w-4 h-4" /> กรองข้อมูล
-          </Button>
         </div>
 
         {loading ? (
@@ -362,16 +354,6 @@ export default function EmployeesPage() {
               ))}
             </TableBody>
           </Table>
-        )}
-        
-        {!loading && filteredEmployees.length === 0 && (
-          <div className="p-20 text-center flex flex-col items-center gap-2">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
-              <Search className="w-8 h-8 text-slate-300" />
-            </div>
-            <p className="text-slate-500 font-medium">ไม่พบข้อมูลพนักงานที่ตรงกับการค้นหา</p>
-            <Button variant="link" onClick={() => setSearchTerm("")} className="text-accent">ล้างการค้นหา</Button>
-          </div>
         )}
       </div>
     </div>

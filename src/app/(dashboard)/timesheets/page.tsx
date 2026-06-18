@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from "react";
@@ -7,7 +6,6 @@ import {
   Clock,
   Save,
   Loader2,
-  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +64,7 @@ export default function TimesheetsPage() {
     setCalc(result);
   }, [formData.checkIn, formData.checkOut, formData.breakMinutes]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db) return;
     
@@ -87,14 +85,8 @@ export default function TimesheetsPage() {
       createdAt: serverTimestamp()
     };
 
+    // ส่งคำสั่งบันทึกทันทีและจัดการ UI โดยไม่รอผลตอบกลับจาก Server
     addDoc(timesheetsRef, payload)
-      .then(() => {
-        toast({
-          title: "บันทึกสำเร็จ",
-          description: `บันทึกเวลาทำงานวันที่ ${formData.date} เรียบร้อยแล้ว`,
-        });
-        setLoading(false);
-      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: timesheetsRef.path,
@@ -102,8 +94,20 @@ export default function TimesheetsPage() {
           requestResourceData: payload,
         });
         errorEmitter.emit('permission-error', permissionError);
-        setLoading(false);
       });
+
+    toast({
+      title: "บันทึกสำเร็จ",
+      description: `ระบบกำลังดำเนินการบันทึกเวลาทำงานวันที่ ${formData.date}`,
+    });
+    
+    setLoading(false);
+    // ล้างฟอร์มบางส่วนเพื่อให้กรอกคนต่อไปได้เร็วขึ้น
+    setFormData(prev => ({
+      ...prev,
+      employeeId: "",
+      remarks: ""
+    }));
   };
 
   return (
@@ -134,7 +138,10 @@ export default function TimesheetsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="font-bold">พนักงาน</Label>
-                  <Select onValueChange={(v) => setFormData({...formData, employeeId: v})}>
+                  <Select 
+                    value={formData.employeeId}
+                    onValueChange={(v) => setFormData({...formData, employeeId: v})}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกพนักงาน" />
                     </SelectTrigger>
@@ -149,7 +156,10 @@ export default function TimesheetsPage() {
 
               <div className="space-y-2">
                 <Label className="font-bold">โครงการ</Label>
-                <Select onValueChange={(v) => setFormData({...formData, projectId: v})}>
+                <Select 
+                  value={formData.projectId}
+                  onValueChange={(v) => setFormData({...formData, projectId: v})}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="เลือกโครงการ" />
                   </SelectTrigger>

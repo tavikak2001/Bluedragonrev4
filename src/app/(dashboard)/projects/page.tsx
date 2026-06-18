@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -10,9 +9,7 @@ import {
   Trash2, 
   Briefcase,
   MapPin,
-  Calendar,
   Building2,
-  Filter,
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +58,7 @@ export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [editingProject, setEditingProject] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -84,7 +82,7 @@ export default function ProjectsPage() {
     );
   }, [projects, searchTerm]);
 
-  const handleSaveProject = async (e: React.FormEvent) => {
+  const handleSaveProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !formData.projectId) return;
 
@@ -96,12 +94,6 @@ export default function ProjectsPage() {
       ...formData,
       updatedAt: serverTimestamp()
     }, { merge: true })
-      .then(() => {
-        toast({ title: "สำเร็จ", description: "บันทึกข้อมูลโครงการเรียบร้อยแล้ว" });
-        setIsSaving(false);
-        setEditingProject(null);
-        setFormData({ projectId: "", projectName: "", clientName: "", location: "", startDate: "", endDate: "", status: "Planning" });
-      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
@@ -109,18 +101,23 @@ export default function ProjectsPage() {
           requestResourceData: formData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        setIsSaving(false);
       });
+
+    toast({ title: "สำเร็จ", description: "บันทึกข้อมูลโครงการเรียบร้อยแล้ว" });
+    setIsSaving(false);
+    setIsDialogOpen(false);
+    setEditingProject(null);
+    setFormData({ projectId: "", projectName: "", clientName: "", location: "", startDate: "", endDate: "", status: "Planning" });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!db || !confirm("ยืนยันการลบโครงการ?")) return;
     const docRef = doc(db, "projects", id);
     deleteDoc(docRef)
-      .then(() => toast({ title: "สำเร็จ", description: "ลบโครงการเรียบร้อยแล้ว" }))
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       });
+    toast({ title: "สำเร็จ", description: "ลบโครงการเรียบร้อยแล้ว" });
   };
 
   return (
@@ -130,7 +127,10 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold text-primary tracking-tight">ข้อมูลโครงการ</h1>
           <p className="text-muted-foreground">จัดการรายละเอียดโครงการ ไซส์งาน และลูกค้า</p>
         </div>
-        <Dialog onOpenChange={(open) => !open && setEditingProject(null)}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setEditingProject(null);
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-accent hover:bg-accent/90 flex items-center gap-2 shadow-lg">
               <Plus className="w-4 h-4" /> เพิ่มโครงการใหม่
@@ -203,7 +203,7 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => setEditingProject(null)}>ยกเลิก</Button>
+                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>ยกเลิก</Button>
                 <Button className="bg-accent" type="submit" disabled={isSaving}>
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "บันทึกข้อมูล"}
                 </Button>
@@ -284,6 +284,7 @@ export default function ProjectsPage() {
                             endDate: prj.endDate,
                             status: prj.status
                           });
+                          setIsDialogOpen(true);
                         }}>
                           <Edit2 className="w-4 h-4" /> แก้ไข
                         </DropdownMenuItem>
