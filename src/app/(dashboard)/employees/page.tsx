@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from "react";
@@ -97,7 +96,19 @@ export default function EmployeesPage() {
       .then(() => {
         toast({ title: "สำเร็จ", description: "บันทึกข้อมูลพนักงานเรียบร้อยแล้ว" });
         setIsAdding(false);
-        // Reset form would go here
+        // Reset form
+        setFormData({
+          employeeId: "",
+          firstName: "",
+          lastName: "",
+          nickname: "",
+          phone: "",
+          position: "",
+          department: "",
+          dailyWage: 0,
+          otRatePerHour: 0,
+          status: "Active"
+        });
       })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({

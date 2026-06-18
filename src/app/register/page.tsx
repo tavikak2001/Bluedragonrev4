@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -36,7 +35,7 @@ export default function RegisterPage() {
     setErrorMsg(null);
     
     if (!auth) {
-      setErrorMsg("ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ โปรดตรวจสอบการตั้งค่า Firebase");
+      setErrorMsg("ไม่สามารถเชื่อมต่อระบบ Firebase ได้ โปรดตรวจสอบการตั้งค่า Config");
       return;
     }
 
@@ -60,18 +59,29 @@ export default function RegisterPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);
-      let message = "เกิดข้อผิดพลาดในการลงทะเบียน";
+      let message = "";
       
-      if (error.code === 'auth/email-already-in-use') {
-        message = "อีเมลนี้ถูกใช้งานแล้วในระบบ";
-      } else if (error.code === 'auth/weak-password') {
-        message = "รหัสผ่านไม่ปลอดภัยพอ (ต้องมีอย่างน้อย 6 ตัวอักษร)";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        message = "ระบบลงทะเบียนด้วยอีเมลยังไม่ถูกเปิดใช้งาน (โปรดแจ้งผู้ดูแลระบบให้เปิดใช้งาน Email/Password ใน Firebase Console)";
-      } else if (error.code === 'auth/invalid-email') {
-        message = "รูปแบบอีเมลไม่ถูกต้อง";
-      } else {
-        message = `ข้อผิดพลาด: ${error.message}`;
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          message = "อีเมลนี้ถูกใช้งานแล้วในระบบ";
+          break;
+        case 'auth/invalid-email':
+          message = "รูปแบบอีเมลไม่ถูกต้อง";
+          break;
+        case 'auth/weak-password':
+          message = "รหัสผ่านไม่ปลอดภัยพอ (ต้องมีอย่างน้อย 6 ตัวอักษร)";
+          break;
+        case 'auth/operation-not-allowed':
+          message = "ระบบลงทะเบียนด้วยอีเมลยังไม่ถูกเปิดใช้งานใน Firebase Console";
+          break;
+        case 'auth/network-request-failed':
+          message = "การเชื่อมต่อเครือข่ายล้มเหลว โปรดตรวจสอบอินเทอร์เน็ต";
+          break;
+        case 'auth/internal-error':
+          message = "เกิดข้อผิดพลาดภายในระบบ Firebase";
+          break;
+        default:
+          message = `เกิดข้อผิดพลาด: ${error.message} (${error.code})`;
       }
       
       setErrorMsg(message);
@@ -117,7 +127,7 @@ export default function RegisterPage() {
                 <Alert variant="destructive" className="bg-destructive/10">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>พบข้อผิดพลาด</AlertTitle>
-                  <AlertDescription>{errorMsg}</AlertDescription>
+                  <AlertDescription className="font-medium">{errorMsg}</AlertDescription>
                 </Alert>
               )}
               
